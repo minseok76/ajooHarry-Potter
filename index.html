@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hogwarts 기숙사 배정</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Georgia, "Noto Serif KR", serif;
+  color: #f8efd9;
+  background: radial-gradient(ellipse at top, #283b54, #101827 65%);
+  min-height: 100vh;
+}
+
+button { font: inherit; cursor: pointer; }
+
+.page {
+  width: min(1200px, 96vw);
+  min-height: 90vh;
+  margin: 3vh auto;
+  padding: 32px;
+  border: 1px solid #bba36b;
+  border-radius: 18px;
+  background: rgba(9, 17, 30, 0.92);
+  box-shadow: 0 0 40px #0008;
+}
+
+.hidden { display: none !important; }
+h1, h2, h3, p { margin-top: 0; }
+
+.eyebrow { color: #d7bd7c; letter-spacing: 4px; font-size: 13px; }
+.title { font-size: clamp(32px, 4vw, 54px); letter-spacing: 3px; margin: 14px 0; }
+.subtitle { color: #d5d5df; line-height: 1.8; }
+.gold { color: #e3c779; }
+
+.primary {
+  border: 1px solid #e4ca84;
+  color: #171c28;
+  background: linear-gradient(135deg, #f0d99b, #b8954e);
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-weight: bold;
+  margin-top: 18px;
+}
+.primary:hover { filter: brightness(1.12); }
+
+.cover-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  align-items: center;
+  gap: 40px;
+  min-height: 75vh;
+}
+
+.castle { width: 100%; max-height: 520px; }
+.cover-info { padding: 24px; }
+
+.house-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 28px 0;
+}
+
+.house-chip {
+  border: 1px solid #ffffff30;
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff08;
+}
+
+.house-chip strong { display: block; margin-bottom: 4px; }
+.house-chip span { color: #c9c5bc; font-size: 13px; }
+
+.quiz-layout {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 36px;
+  align-items: center;
+  min-height: 75vh;
+}
+
+.story-panel { padding: 20px; }
+
+.progress-track {
+  height: 6px;
+  background: #ffffff20;
+  border-radius: 99px;
+  overflow: hidden;
+  margin: 20px 0;
+}
+
+.progress-bar {
+  width: 0;
+  height: 100%;
+  background: #d9b968;
+  transition: width 0.3s;
+}
+
+.question-number { color: #d8bb70; font-size: 14px; letter-spacing: 2px; }
+.question-title { font-size: clamp(25px, 3vw, 38px); line-height: 1.4; }
+.question-desc { color: #c9cbd4; line-height: 1.8; }
+
+.answers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.answer {
+  min-height: 120px;
+  text-align: left;
+  color: #f8efd9;
+  padding: 20px;
+  border: 1px solid #ffffff35;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffffff0c, #ffffff03);
+  transition: 0.2s;
+  line-height: 1.6;
+}
+
+.answer:hover {
+  border-color: #e0c477;
+  background: #d6b45c18;
+  transform: translateY(-2px);
+}
+
+.answer .letter {
+  display: block;
+  color: #d7bd7c;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.result-layout {
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 30px 0;
+}
+
+.house-symbol { font-size: 70px; margin: 15px 0; }
+.result-name { font-size: clamp(36px, 5vw, 58px); margin: 10px 0; }
+
+.result-description {
+  max-width: 650px;
+  margin: 0 auto;
+  color: #d4d2da;
+  line-height: 1.9;
+}
+
+.score-list {
+  max-width: 550px;
+  margin: 28px auto;
+  text-align: left;
+}
+
+.score-row { margin: 15px 0; }
+
+.score-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.score-track {
+  height: 9px;
+  background: #ffffff20;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.score-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8f7542, #e5ca80);
+  border-radius: 99px;
+}
+
+@media (max-width: 700px) {
+  .page { padding: 20px; }
+  .cover-layout, .quiz-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .castle { max-height: 230px; }
+  .cover-info { padding: 8px; }
+  .answers { grid-template-columns: 1fr; }
+  .answer { min-height: auto; }
+}
+</style>
+</head>
+
+<body>
+<main class="page">
+
+<section id="cover" class="cover-layout">
+<div>
+<svg class="castle" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#263d60"/>
+<stop offset="100%" stop-color="#111b30"/>
+</linearGradient>
+</defs>
+
+<rect width="500" height="500" rx="18" fill="url(#sky)"/>
+<circle cx="365" cy="90" r="42" fill="#e8dfbd"/>
+<circle cx="380" cy="77" r="39" fill="#263d60"/>
+
+<g fill="#f4e9c9">
+<circle cx="75" cy="70" r="2"/>
+<circle cx="130" cy="110" r="2"/>
+<circle cx="240" cy="55" r="2"/>
+<circle cx="430" cy="150" r="2"/>
+<circle cx="55" cy="190" r="2"/>
+<circle cx="305" cy="125" r="2"/>
+<circle cx="175" cy="160" r="2"/>
+<circle cx="450" cy="55" r="2"/>
+</g>
+
+<path d="M0 390 Q100 350 180 390 T350 380 T500 390 L500 500 L0 500Z" fill="#101827"/>
+
+<g fill="#34445b" stroke="#b49a63" stroke-width="2">
+<rect x="125" y="230" width="250" height="185"/>
+<rect x="95" y="275" width="55" height="140"/>
+<rect x="350" y="265" width="55" height="150"/>
+<path d="M115 230 L115 165 L137 135 L160 165 L160 230Z"/>
+<path d="M185 230 L185 120 L210 80 L235 120 L235 230Z"/>
+<path d="M265 230 L265 145 L290 105 L315 145 L315 230Z"/>
+<path d="M340 265 L340 190 L370 150 L400 190 L400 265Z"/>
+</g>
+
+<g fill="#d8c58b">
+<rect x="132" y="178" width="10" height="20" rx="5"/>
+<rect x="202" y="139" width="12" height="24" rx="6"/>
+<rect x="283" y="160" width="12" height="24" rx="6"/>
+<rect x="362" y="205" width="12" height="24" rx="6"/>
+<rect x="165" y="275" width="14" height="23" rx="7"/>
+<rect x="210" y="275" width="14" height="23" rx="7"/>
+<rect x="275" y="275" width="14" height="23" rx="7"/>
+<rect x="320" y="275" width="14" height="23" rx="7"/>
+</g>
+
+<path d="M220 415 L220 355 Q250 315 280 355 L280 415Z" fill="#101827" stroke="#b49a63" stroke-width="2"/>
+<text x="250" y="465" text-anchor="middle" fill="#e8d6a2" font-size="17" letter-spacing="5">HOGWARTS</text>
+</svg>
+</div>
+
+<div class="cover-info">
+<p class="eyebrow">WELCOME TO HOGWARTS</p>
+<h1 class="title">기숙사 배정의 밤</h1>
+<p class="subtitle">
+마법의 세계에 온 것을 환영합니다.<br>
+아홉 가지 질문에 답하고 당신의 성격과<br>
+가장 잘 어울리는 기숙사를 찾아보세요.
+</p>
+
+<div class="house-list">
+<div class="house-chip">
+<strong style="color:#d46a55">🦁 그리핀도르</strong>
+<span>용기와 정의</span>
+</div>
+<div class="house-chip">
+<strong style="color:#a8c5ad">🐍 슬리데린</strong>
+<span>야망과 지혜</span>
+</div>
+<div class="house-chip">
+<strong style="color:#91b9e8">🦅 래번클로</strong>
+<span>지식과 창의성</span>
+</div>
+<div class="house-chip">
+<strong style="color:#e4ca80">🦡 후플푸프</strong>
+<span>성실함과 우정</span>
+</div>
+</div>
+
+<button class="primary" onclick="startQuiz()">입학식 시작하기 →</button>
+</div>
+</section>
+
+<section id="quiz" class="quiz-layout hidden">
+<div class="story-panel">
+<p class="eyebrow">THE SORTING CEREMONY</p>
+<p id="questionNumber" class="question-number">QUESTION 1 / 9</p>
+<div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+<h2 id="questionTitle" class="question-title"></h2>
+<p id="questionDesc" class="question-desc"></p>
+</div>
+<div id="answers" class="answers"></div>
+</section>
+
+<section id="result" class="result-layout hidden">
+<p class="eyebrow">THE SORTING HAT HAS DECIDED</p>
+<div id="houseSymbol" class="house-symbol"></div>
+<h2 id="houseName" class="result-name"></h2>
+<p id="houseMotto" class="gold"></p>
+<p id="houseDescription" class="result-description"></p>
+<div id="scoreList" class="score-list"></div>
+<button class="primary" onclick="restartQuiz()">다시 배정받기 ↻</button>
+</section>
+
+</main>
+
+<script>
+const questions = [
+{
+title: "낯선 마법의 세계에 도착했다!",
+desc: "가장 먼저 무엇을 하고 싶나요?",
+answers: [
+["위험해 보여도 신비한 장소를 탐험한다.", "G"],
+["이곳에서 내가 이룰 수 있는 일을 생각한다.", "S"],
+["주변의 마법 원리를 관찰한다.", "R"],
+["함께 온 친구들이 잘 있는지 확인한다.", "H"]
+]
+},
+{
+title: "금지된 숲에서 이상한 소리가 들린다.",
+desc: "당신의 행동은?",
+answers: [
+["무슨 일인지 직접 확인하러 간다.", "G"],
+["상황을 파악하고 유리한 방법을 찾는다.", "S"],
+["소리의 정체를 추리한다.", "R"],
+["다른 사람들과 함께 안전하게 확인한다.", "H"]
+]
+},
+{
+title: "마법 수업에서 어려운 과제를 받았다.",
+desc: "어떻게 해결하나요?",
+answers: [
+["일단 도전하면서 방법을 익힌다.", "G"],
+["가장 효율적인 해결 방법을 찾는다.", "S"],
+["관련된 자료를 조사하고 분석한다.", "R"],
+["친구들과 서로 도우며 해결한다.", "H"]
+]
+},
+{
+title: "친구가 억울한 오해를 받고 있다.",
+desc: "당신은 어떻게 할 건가요?",
+answers: [
+["앞에 나서서 친구를 변호한다.", "G"],
+["오해를 풀 수 있는 증거를 찾는다.", "S"],
+["사건을 차근차근 분석한다.", "R"],
+["친구의 이야기를 듣고 곁을 지킨다.", "H"]
+]
+},
+{
+title: "가장 갖고 싶은 마법의 물건은?",
+desc: "하나만 선택할 수 있다면?",
+answers: [
+["두려움을 이겨 내게 하는 검", "G"],
+["원하는 목표를 이루도록 돕는 반지", "S"],
+["모든 지식을 기록한 책", "R"],
+["사람들의 마음을 이해하는 수정구", "H"]
+]
+},
+{
+title: "팀 프로젝트에서 당신의 역할은?",
+desc: "가장 자연스럽게 맡게 되는 역할을 고르세요.",
+answers: [
+["먼저 나서서 팀을 이끈다.", "G"],
+["목표와 전략을 정한다.", "S"],
+["아이디어를 내고 문제를 분석한다.", "R"],
+["모두가 협력할 수 있도록 돕는다.", "H"]
+]
+},
+{
+title: "어떤 능력을 가장 배우고 싶나요?",
+desc: "마법을 하나 배울 수 있다면?",
+answers: [
+["위험한 순간에도 용기를 내는 능력", "G"],
+["상황을 유리하게 바꾸는 능력", "S"],
+["복잡한 문제를 빠르게 이해하는 능력", "R"],
+["다른 사람을 치유하고 돕는 능력", "H"]
+]
+},
+{
+title: "마법 생물이 길을 잃고 있다.",
+desc: "당신은 어떻게 행동할 건가요?",
+answers: [
+["주저하지 않고 다가가 돕는다.", "G"],
+["안전하게 구조할 방법을 계획한다.", "S"],
+["생물의 특징과 행동을 먼저 살핀다.", "R"],
+["다치지 않도록 조심스럽게 돌본다.", "H"]
+]
+},
+{
+title: "마지막으로, 당신에게 가장 중요한 가치는?",
+desc: "마음이 가장 끌리는 것을 선택하세요.",
+answers: [
+["용기와 신념", "G"],
+["성취와 야망", "S"],
+["지식과 지혜", "R"],
+["우정과 성실함", "H"]
+]
+}
+];
+
+const houses = {
+G: {
+name: "그리핀도르",
+symbol: "🦁",
+motto: "용기 있는 마음은 길을 만든다.",
+description: "당신은 어려운 순간에도 행동할 줄 아는 사람입니다. 정의롭다고 생각하는 일을 위해 도전하고, 자신의 신념을 지키려는 면이 있습니다."
+},
+S: {
+name: "슬리데린",
+symbol: "🐍",
+motto: "야망은 가능성을 현실로 만든다.",
+description: "당신은 목표를 세우고 전략적으로 행동하는 편입니다. 상황을 빠르게 파악하고 자신만의 방식으로 원하는 결과에 다가갑니다."
+},
+R: {
+name: "래번클로",
+symbol: "🦅",
+motto: "호기심은 새로운 문을 연다.",
+description: "당신은 지식과 새로운 아이디어를 중요하게 생각합니다. 궁금한 것을 탐구하고 문제를 다양한 관점에서 바라보는 것을 좋아합니다."
+},
+H: {
+name: "후플푸프",
+symbol: "🦡",
+motto: "성실함과 친절함은 큰 힘이 된다.",
+description: "당신은 주변 사람들과의 신뢰를 중요하게 생각합니다. 꾸준히 노력하고 다른 사람을 배려하며 함께 성장하는 데 강점이 있습니다."
+}
+};
+
+let currentQuestion = 0;
+let scores = { G: 0, S: 0, R: 0, H: 0 };
+
+function startQuiz() {
+currentQuestion = 0;
+scores = { G: 0, S: 0, R: 0, H: 0 };
+document.getElementById("cover").classList.add("hidden");
+document.getElementById("result").classList.add("hidden");
+document.getElementById("quiz").classList.remove("hidden");
+showQuestion();
+}
+
+function showQuestion() {
+const q = questions[currentQuestion];
+
+document.getElementById("questionNumber").textContent =
+`QUESTION ${currentQuestion + 1} / ${questions.length}`;
+
+document.getElementById("questionTitle").textContent = q.title;
+document.getElementById("questionDesc").textContent = q.desc;
+
+document.getElementById("progressBar").style.width =
+`${(currentQuestion / questions.length) * 100}%`;
+
+const answers = document.getElementById("answers");
+answers.innerHTML = "";
+
+q.answers.forEach((answer, index) => {
+const button = document.createElement("button");
+button.className = "answer";
+
+const letter = document.createElement("span");
+letter.className = "letter";
+letter.textContent = `CHOICE ${String.fromCharCode(65 + index)}`;
+
+const text = document.createElement("span");
+text.textContent = answer[0];
+
+button.appendChild(letter);
+button.appendChild(text);
+
+button.addEventListener("click", () => {
+scores[answer[1]]++;
+currentQuestion++;
+
+if (currentQuestion < questions.length) {
+showQuestion();
+} else {
+showResult();
+}
+});
+
+answers.appendChild(button);
+});
+}
+
+function showResult() {
+document.getElementById("quiz").classList.add("hidden");
+document.getElementById("result").classList.remove("hidden");
+
+const order = ["G", "S", "R", "H"];
+const winner = order.reduce((best, key) =>
+scores[key] > scores[best] ? key : best
+, order[0]);
+
+const house = houses[winner];
+
+document.getElementById("houseSymbol").textContent = house.symbol;
+document.getElementById("houseName").textContent = house.name;
+document.getElementById("houseMotto").textContent = house.motto;
+document.getElementById("houseDescription").textContent = house.description;
+
+const scoreList = document.getElementById("scoreList");
+scoreList.innerHTML = "";
+
+order.forEach(key => {
+const row = document.createElement("div");
+row.className = "score-row";
+
+const label = document.createElement("div");
+label.className = "score-label";
+
+const name = document.createElement("span");
+name.textContent = `${houses[key].symbol} ${houses[key].name}`;
+
+const score = document.createElement("span");
+score.textContent = `${scores[key]}점`;
+
+label.appendChild(name);
+label.appendChild(score);
+
+const track = document.createElement("div");
+track.className = "score-track";
+
+const fill = document.createElement("div");
+fill.className = "score-fill";
+fill.style.width = `${scores[key] / questions.length * 100}%`;
+
+track.appendChild(fill);
+row.appendChild(label);
+row.appendChild(track);
+scoreList.appendChild(row);
+});
+}
+
+function restartQuiz() {
+document.getElementById("result").classList.add("hidden");
+document.getElementById("cover").classList.remove("hidden");
+}
+</script>
+
+</body>
+</html>
